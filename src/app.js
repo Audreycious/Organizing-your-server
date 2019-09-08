@@ -1,48 +1,17 @@
 require('dotenv').config()
 const express = require('express')
 const morgan = require('morgan')
-const winston = require('winston')
+const uuid = require('uuid/v4')
+const bookmarkRouter = require("./routes/bookmarkRouter")
 const cors = require('cors')
 const helmet = require('helmet')
 const { NODE_ENV } = require('./config')
 
 const app = express()
 
-let bookmarks = [
-    {
-      "id": "8sdfbvbs65sd",
-      "title": "Google",
-      "url": "http://google.com",
-      "desc": "An indie search engine startup",
-      "rating": 4
-    },
-    {
-      "id": "87fn36vd9djd",
-      "title": "Fluffiest Cats in the World",
-      "url": "http://medium.com/bloggerx/fluffiest-cats-334",
-      "desc": "The only list of fluffy cats online",
-      "rating": 5
-    }
-  ];
-
 const morganOption = (NODE_ENV === 'production')
   ? 'tiny'
   : 'common';
-
-// set up winston
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.json(),
-    transports: [
-      new winston.transports.File({ filename: 'info.log' })
-    ]
-  });
-  
-  if (NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-      format: winston.format.simple()
-    }));
-}
 
 app.use(morgan(morganOption))
 app.use(helmet())
@@ -60,22 +29,11 @@ app.use(function validateBearerToken(req, res, next) {
     next()
   })
 
-app.get('/bookmarks', (req, res) => {
-    res.json(bookmarks);
-})
+app.use(bookmarkRouter)
 
-app.get("/bookmarks/:id", (req, res) => {
-    const { id } = req.params;
-    const bookmark = bookmarks.find(mark => mark.id == id);
-    if (!bookmark) {
-        logger.error(`Bookmark with id ${id} not found.`);
-        return res
-            .status(404)
-            .send('Bookmark not found');
-    }
-
-    res.json(bookmark);
-})
+app.delete("/bookmarks/:id", (req, res) => {
+    
+});
 
 app.use(function errorHandler(error, req, res, next) {
     let response
