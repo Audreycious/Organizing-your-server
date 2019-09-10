@@ -4,11 +4,17 @@ const logger = require('../logger')
 const { bookmarks } = require("../store")
 const bookmarkRouter = express.Router()
 const bodyParser = express.json()
+const BookmarksService = require('../bookmarks-service')
 
 bookmarkRouter
     .route('/bookmarks')
-    .get((req, res) => {
-        res.json(bookmarks)
+    .get((req, res, next) => {
+        const knexInstance = req.app.get('db')
+        BookmarksService.getAllBookmarks(knexInstance)
+            .then(bookmarks => {
+                res.json(bookmarks)
+            })
+            .catch(next)
     })
     .post(bodyParser, (req, res) => {
         const { title, url, desc, rating } = req.body
@@ -57,29 +63,26 @@ bookmarkRouter
   })
 
 bookmarkRouter
-    .route('/bookmarks/:id')
-    .get((req, res) => {
-        const { id } = req.params;
-        const bookmark = bookmarks.find(mark => mark.id == id)
-        if (!bookmark) {
-            logger.error(`Bookmark with id ${id} not found.`)
-            return res
-                .status(404)
-                .send('Bookmark not found')
-        }
-        res.json(bookmark)
+    .route('/bookmarks/:bookmarkId')
+    .get((req, res, next) => {
+        const knexInstance = req.app.get('db')
+        BookmarksService.getById(knexInstance, req.params.bookmarkId)
+            .then(bookmark => {
+                res.json(bookmark)
+            })
+            .catch(next)
     })
     .delete((req, res) => {
-        const { id } = req.params
-        const bookmarkIndex = bookmarks.findIndex(mark => mark.id == id)
+        const { bookmarkId } = req.params
+        const bookmarkIndex = bookmarks.findIndex(mark => mark.id == bookmarkId)
         if (bookmarkIndex === -1) {
-            logger.error(`Bookmark with id ${id} not found.`)
+            logger.error(`Bookmark with id ${bookmarkId} not found.`)
             return res
             .status(404)
             .send('Not found')
         }
         bookmarks.splice(bookmarkIndex, 1)
-        logger.info(`Card with id ${id} deleted.`)
+        logger.info(`Card with id ${bookmarkId} deleted.`)
         res
             .status(204)
             .end()
