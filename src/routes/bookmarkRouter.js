@@ -68,6 +68,11 @@ bookmarkRouter
         const knexInstance = req.app.get('db')
         BookmarksService.getById(knexInstance, req.params.bookmarkId)
             .then(bookmark => {
+                if (!bookmark) {
+                    return res.status(404).json({
+                        error: { message: `Bookmark does not exist`}
+                    })
+                }
                 res.json(bookmark)
             })
             .catch(next)
