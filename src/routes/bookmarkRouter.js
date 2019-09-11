@@ -1,8 +1,8 @@
 const express = require('express')
+const path = require('path')
 const xss = require('xss')
 const uuid = require('uuid/v4')
 const logger = require('../logger')
-const { bookmarks } = require("../store")
 const bookmarkRouter = express.Router()
 const bodyParser = express.json()
 const BookmarksService = require('../bookmarks-service')
@@ -77,7 +77,7 @@ bookmarkRouter
         .then(bookmark => {
             res
                 .status(201)
-                .location(`/bookmarks/${newBookmark.id}`)
+                .location(path.posix.join(req.originalUrl, `/${newBookmark.id}`))
                 .json({
                     id: bookmark.id,
                     title: xss(bookmark.title),
@@ -88,7 +88,7 @@ bookmarkRouter
                 })
         })
         .catch(next)
-  })
+    })
 
 bookmarkRouter
     .route('/bookmarks/:bookmarkId')
@@ -127,6 +127,19 @@ bookmarkRouter
                 res.status(204).end()
             })
             .catch(next)
+    })
+    .patch(bodyParser, (req, res, next) => {
+        const { title, style, url, description, rating } = req.body
+        const bookmarkToUpdate = { title, style, url, description, rating }
+        BookmarksService.updateBookmark(
+            req.app.get('db'),
+            req.params.bookmarkId,
+            bookmarkToUpdate
+        )
+        .then(() => {
+            res.status(204).end()
+        })
+        .catch(next)
     })
 
 module.exports = bookmarkRouter
